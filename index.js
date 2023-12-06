@@ -57,8 +57,13 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false) => {
       // use default value if not found
       if (apiVersionDeprecated == null) apiVersionDeprecated = false;
 
+      let apiVersionDefault= apiVersionConfig.default;
+      // use default value if not found
+      if (apiVersionDefault == null) apiVersionDefault = false;
+
       delete apiVersionConfig.active;
       delete apiVersionConfig.deprecated;
+      delete apiVersionConfig.default;
       versions[apiVersion] = [];
 
       // copy over endpoints from previous version if needed
@@ -76,8 +81,11 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false) => {
         // use default value if not found
         if (endpointDeprecated == null) endpointDeprecated = false;
 
+
         apiVersionConfig.endpoints[i].active = endpointActive && apiVersionActive;
         apiVersionConfig.endpoints[i].deprecated = endpointDeprecated || apiVersionDeprecated;
+        apiVersionConfig.endpoints[i].default = apiVersionDefault;
+
         let endpoint = new Endpoint(apiVersion, apiVersionConfig.endpoints[i]);
         endpoint.config.middleware = [...[defaultMiddleware], ...(endpoint.config.middleware || [])];
         // add new endpoint to the list or replace if it exists already
@@ -139,6 +147,7 @@ function populateRouter(versions) {
 }
 
 function constructRoute(endpoint) {
+  // console.log('endpoint', endpoint);
   const endpointURL = `/${endpoint.apiVersion}${endpoint.config.route}`;
 
   if (!consts.HTTP_METHODS.includes(endpoint.config.method)) {
@@ -153,6 +162,16 @@ function constructRoute(endpoint) {
       return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
     }
   );
+  if (endpoint.config.default) {
+    const versionlessEndpointURL = `${endpoint.config.route}`;
+    router[endpoint.config.method.toLowerCase()](
+    versionlessEndpointURL,
+    endpoint.config.middleware,
+    async (req, res, next) => {
+      return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
+    }
+  );
+  }
 }
 
 module.exports = {
