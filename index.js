@@ -4,7 +4,7 @@ const Endpoint = require('./objects/Endpoint.js');
 
 var logger;
 
-const defaultMiddleware = (res, req, next) => next();
+const defaultMiddleware = (_, __, next) => next();
 
 const clearConsoleAndScrollbackBuffer = () => {
   process.stdout.write('\u001b[3J\u001b[2J\u001b[1J');
