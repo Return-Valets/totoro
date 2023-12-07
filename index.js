@@ -3,6 +3,7 @@ const consts = require('./consts.js');
 const Endpoint = require('./objects/Endpoint.js');
 
 var logger;
+var silentMode;
 
 const defaultMiddleware = (res, req, next) => next();
 
@@ -41,7 +42,7 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false, silen
   }
 
   clearConsole && clearConsoleAndScrollbackBuffer();
-  const silentMode = silent;
+  silentMode = silent;
   const versions = {};
   let previousApiVersion = null;
 
