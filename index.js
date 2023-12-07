@@ -132,13 +132,13 @@ function pushOrReplaceRoute(endpoints, endpoint) {
 function populateRouter(versions) {
   for (let apiVersion in versions) {
     if (versions.hasOwnProperty(apiVersion)) {
-      logger.log('debug', `API version ${apiVersion}`);
+      // logger.log('debug', `API version ${apiVersion}`);
       for (let i = 0; i < versions[apiVersion].length; i++) {
         if (versions[apiVersion][i].config.active) {
           constructRoute(versions[apiVersion][i]);
         }
       }
-      logger.log('debug', '\n');
+      // logger.log('debug', '\n');
       // logger.log('debug', `End of API version ${apiVersion}\n`);
     }
   }
@@ -154,7 +154,7 @@ function constructRoute(endpoint) {
     logger.log('error', `HTTP Method not recognised! '${endpoint.config.method} ${endpointURL}'`);
     return;
   }
-  logger.log('debug', `[Endpoint]    :    '${endpoint.config.method} ${endpointURL}'`);
+  // logger.log('debug', `[Endpoint]    :    '${endpoint.config.method} ${endpointURL}'`);
   router[endpoint.config.method.toLowerCase()](
     endpointURL,
     endpoint.config.middleware,
