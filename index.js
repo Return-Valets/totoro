@@ -162,7 +162,7 @@ function constructRoute(endpoint) {
       return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
     }
   );
-  // if default, add versionless route 
+  // if default, add versionless route as well 
   if (endpoint.config.default) {
     const versionlessEndpointURL = `${endpoint.config.route}`;
     router[endpoint.config.method.toLowerCase()](

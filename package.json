@@ -11,7 +11,7 @@
     "winston": "^3.3.3"
   },
   "repository": {
-    "url": "git://github.com/VGJohn/totoro.git",
+    "url": "git://github.com/skemantix/totoro.git",
     "type": "git"
   },
   "keywords": [
