@@ -45,6 +45,7 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false, silen
   silentMode = silent;
   const versions = {};
   let previousApiVersion = null;
+  let defaultApiVersion = null;
 
   for (let apiVersion in apiConfig) {
     if (apiConfig.hasOwnProperty(apiVersion)) {
@@ -58,9 +59,13 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false, silen
       // use default value if not found
       if (apiVersionDeprecated == null) apiVersionDeprecated = false;
 
-      let apiVersionDefault= apiVersionConfig.default;
-      // use default value if not found
-      if (apiVersionDefault == null) apiVersionDefault = false;
+      // First ACTIVE default api version found will be used.  
+      // Ommiting default will result in no default api version
+      let apiVersionDefault = false;
+      if (!defaultApiVersion && apiVersionActive && apiVersionConfig.default) {
+        apiVersionDefault = true;
+        defaultApiVersion = apiVersion;
+      }
 
       delete apiVersionConfig.active;
       delete apiVersionConfig.deprecated;
@@ -166,12 +171,12 @@ function constructRoute(endpoint) {
   if (endpoint.config.default) {
     const versionlessEndpointURL = `${endpoint.config.route}`;
     router[endpoint.config.method.toLowerCase()](
-    versionlessEndpointURL,
-    endpoint.config.middleware,
-    async (req, res, next) => {
-      return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
-    }
-  );
+      versionlessEndpointURL,
+      endpoint.config.middleware,
+      async (req, res, next) => {
+        return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
+      }
+    );
   }
 }
 
