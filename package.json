@@ -1,6 +1,6 @@
 {
   "name": "totoro-node",
-  "version": "2.0.5",
+  "version": "2.0.7",
   "description": "Route Management for API Versioning",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "winston": "^3.3.3"
   },
   "repository": {
-    "url": "git://github.com/VGJohn/totoro.git",
+    "url": "git://github.com/return-valets/totoro.git",
     "type": "git"
   },
   "keywords": [
