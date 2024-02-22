@@ -3,6 +3,7 @@ const consts = require('./consts.js');
 const Endpoint = require('./objects/Endpoint.js');
 
 var logger;
+var silentMode;
 
 const defaultMiddleware = (res, req, next) => next();
 
@@ -29,7 +30,7 @@ const createLogger = () => {
   });
 };
 
-const rain = (apiConfig, loggerInstance = undefined, clearConsole = false) => {
+const rain = (apiConfig, loggerInstance = undefined, clearConsole = false, silent = false) => {
   // maybe use TS next time?
   try {
     logger =
@@ -41,9 +42,10 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false) => {
   }
 
   clearConsole && clearConsoleAndScrollbackBuffer();
-
+  silentMode = silent;
   const versions = {};
   let previousApiVersion = null;
+  let defaultApiVersion = null;
 
   for (let apiVersion in apiConfig) {
     if (apiConfig.hasOwnProperty(apiVersion)) {
@@ -57,8 +59,17 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false) => {
       // use default value if not found
       if (apiVersionDeprecated == null) apiVersionDeprecated = false;
 
+      // First ACTIVE default api version found will be used.  
+      // Ommiting default will result in no default api version
+      let apiVersionDefault = false;
+      if (!defaultApiVersion && apiVersionActive && apiVersionConfig.default) {
+        apiVersionDefault = true;
+        defaultApiVersion = apiVersion;
+      }
+
       delete apiVersionConfig.active;
       delete apiVersionConfig.deprecated;
+      delete apiVersionConfig.default;
       versions[apiVersion] = [];
 
       // copy over endpoints from previous version if needed
@@ -76,8 +87,11 @@ const rain = (apiConfig, loggerInstance = undefined, clearConsole = false) => {
         // use default value if not found
         if (endpointDeprecated == null) endpointDeprecated = false;
 
+
         apiVersionConfig.endpoints[i].active = endpointActive && apiVersionActive;
         apiVersionConfig.endpoints[i].deprecated = endpointDeprecated || apiVersionDeprecated;
+        apiVersionConfig.endpoints[i].default = apiVersionDefault;
+
         let endpoint = new Endpoint(apiVersion, apiVersionConfig.endpoints[i]);
         endpoint.config.middleware = [...[defaultMiddleware], ...(endpoint.config.middleware || [])];
         // add new endpoint to the list or replace if it exists already
@@ -124,13 +138,13 @@ function pushOrReplaceRoute(endpoints, endpoint) {
 function populateRouter(versions) {
   for (let apiVersion in versions) {
     if (versions.hasOwnProperty(apiVersion)) {
-      logger.log('debug', `API version ${apiVersion}`);
+      !silentMode && logger.log('debug', `API version ${apiVersion}`);
       for (let i = 0; i < versions[apiVersion].length; i++) {
         if (versions[apiVersion][i].config.active) {
           constructRoute(versions[apiVersion][i]);
         }
       }
-      logger.log('debug', '\n');
+      !silentMode && logger.log('debug', '\n');
       // logger.log('debug', `End of API version ${apiVersion}\n`);
     }
   }
@@ -139,13 +153,14 @@ function populateRouter(versions) {
 }
 
 function constructRoute(endpoint) {
+  // console.log('endpoint', endpoint);
   const endpointURL = `/${endpoint.apiVersion}${endpoint.config.route}`;
 
   if (!consts.HTTP_METHODS.includes(endpoint.config.method)) {
     logger.log('error', `HTTP Method not recognised! '${endpoint.config.method} ${endpointURL}'`);
     return;
   }
-  logger.log('debug', `[Endpoint]    :    '${endpoint.config.method} ${endpointURL}'`);
+  !silentMode && logger.log('debug', `[Endpoint]    :    '${endpoint.config.method} ${endpointURL}'`);
   router[endpoint.config.method.toLowerCase()](
     endpointURL,
     endpoint.config.middleware,
@@ -153,6 +168,16 @@ function constructRoute(endpoint) {
       return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
     }
   );
+  if (endpoint.config.default) {
+    const versionlessEndpointURL = `${endpoint.config.route}`;
+    router[endpoint.config.method.toLowerCase()](
+      versionlessEndpointURL,
+      endpoint.config.middleware,
+      async (req, res, next) => {
+        return await endpoint.config.implementation(endpoint.apiVersion, req, res, next);
+      }
+    );
+  }
 }
 
 module.exports = {
